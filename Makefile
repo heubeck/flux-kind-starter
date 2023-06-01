@@ -2,7 +2,8 @@
 binary_location = ${HOME}/.fks
 
 # gitops repository to play with
-gitops_repo=$(shell git config --get remote.origin.url)
+gitops_repo = $(shell git config --get remote.origin.url)
+gitops_branch = $(shell git branch --show-current)
 
 # https://github.com/kubernetes-sigs/kind/releases
 kind_version = 0.19.0
@@ -30,6 +31,7 @@ check: # validate prerequisites
 	@kubectl cluster-info | grep 127.0.0.1
 	#
 	# GitOps-Repository: $(gitops_repo)
+	# GitOps-Branch: $(gitops_branch)
 	# Everything is fine, lets get bootstrapped
 	###
 
@@ -57,11 +59,30 @@ clean: # remove kind cluster
 	# Removing kind cluster named 'flux-kind-starter'
 	@$(kind_location) delete cluster -n flux-kind-starter
 
+gitops_repo_owner = $(shell echo $(gitops_repo) | cut -d/ -f4)
+gitops_repo_name = $(shell echo $(gitops_repo) | cut -d/ -f5 | cut -d. -f1)
+
 .PHONY: bootstrap
 bootstrap: check # install and configure flux
 ifndef GITHUB_TOKEN
 	@echo "!!! please set GITHUB_TOKEN env to bootstrap flux"
 	exit 1
 endif
-	### Bootstrapping flux
-	# go on
+ifndef FLUX_PATH
+	@echo "!!! please set FLUX_PATH for pointing to the desired flux bootstrap path"
+	exit 1
+endif
+	### Bootstrapping flux from GitHub repo $(gitops_repo_owner)/$(gitops_repo_name) branch $(gitops_branch)
+	$(flux_location) bootstrap github \
+		--components-extra=image-reflector-controller,image-automation-controller \
+		--read-write-key=true \
+		--owner=$(gitops_repo_owner) \
+		--repository=$(gitops_repo_name) \
+		--branch=$(gitops_branch) \
+		--path=${FLUX_PATH}
+	#
+	# Configuring GitHub commit status notification
+	@kubectl create secret generic -n flux-system github --from-literal token=${GITHUB_TOKEN} --save-config --dry-run=client -o yaml | kubectl apply -f -
+	@$(flux_location) create alert-provider github -n flux-system --type github --address "https://github.com/$(gitops_repo_owner)/$(gitops_repo_name)" --secret-ref github
+	@$(flux_location) create alert -n flux-system --provider-ref github --event-source "Kustomization/*" flux-system
+	###
