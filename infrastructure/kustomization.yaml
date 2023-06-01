@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
 - namespaces.yaml
 - ingress.yaml
+- dashboard.yaml

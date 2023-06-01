@@ -1,0 +1,81 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: kubernetes-dashboard
+  namespace: dashboard
+spec:
+  interval: 120m
+  url: https://kubernetes.github.io/dashboard/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kubernetes-dashboard
+  namespace: dashboard
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: kubernetes-dashboard
+      version: ${kubernetes_dashboard_version}
+      sourceRef:
+        kind: HelmRepository
+        name: kubernetes-dashboard
+        namespace: dashboard
+      interval: 60m
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace
+  values:
+    service:
+      externalPort: 80
+    extraArgs:
+      - --enable-skip-login
+      - --enable-insecure-login
+    metricsScraper:
+      enabled: true
+    metrics-server:
+      enabled: true
+      args:
+        - --kubelet-insecure-tls
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: dashboard
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernetes-dashboard
+  namespace: dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    service.alpha.kubernetes.io/app-protocols: '{"https":"HTTPS"}'
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/server-snippet: |-
+      location = /dashboard {
+        return 301 /dashboard/;
+      }
+spec:
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: kubernetes-dashboard
+                port:
+                  number: 80
+            path: /dashboard/(.*)
+            pathType: Prefix

@@ -14,7 +14,5 @@ spec:
   timeout: 1m
   postBuild:
     substitute:
-      loadtester_version: "^2.x"
-      dns_zone: dev.promotion.mmst.eu
-      gcp_project_id: mms-gib-proco-d-0815
-      gcp_analytics_project_id: mms-gib-analytics-d-1105
+      ingress_nginx_version: "~4"
+      kubernetes_dashboard_version: "~6"

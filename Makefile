@@ -48,8 +48,8 @@ prepare: # install prerequisites
 	@curl -sSLo $(flux_location).tgz https://github.com/fluxcd/flux2/releases/download/v$(flux_version)/flux_$(flux_version)_$(flux_arch).tar.gz
 	@tar xf $(flux_location).tgz -C $(binary_location) && rm -f $(flux_location).tgz
 
-.PHONY: start
-start: # create kind cluster
+.PHONY: new
+new: # create fresh kind cluster
 	# Creating kind cluster named 'flux-kind-starter'
 	@$(kind_location) create cluster -n flux-kind-starter --config .kind/config.yaml
 	@$(kind_location) export kubeconfig -n flux-kind-starter --kubeconfig ${HOME}/.kube/config
@@ -85,4 +85,10 @@ endif
 	@kubectl create secret generic -n flux-system github --from-literal token=${GITHUB_TOKEN} --save-config --dry-run=client -o yaml | kubectl apply -f -
 	@$(flux_location) create alert-provider github -n flux-system --type github --address "https://github.com/$(gitops_repo_owner)/$(gitops_repo_name)" --secret-ref github
 	@$(flux_location) create alert -n flux-system --provider-ref github --event-source "Kustomization/*" flux-system
+	@kubectl get kustomization -n flux-system
 	###
+
+.PHONY: reconcile
+reconcile: # reconsule flux-system kustomization
+	@$(flux_location) reconcile kustomization flux-system --with-source
+	@kubectl get kustomization -n flux-system
