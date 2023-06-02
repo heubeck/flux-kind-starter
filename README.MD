@@ -15,16 +15,17 @@ Please have a look to the top section of the [`Makefile`](Makefile) to change it
 The included `Makefile` supports the following tasks:
 
 * `make prepare`:
-  Downloads the `kind` and `flux` clis to `~/.fks` for later use. It's doesn't manipulate any of your regular local setup.
+  Downloads the `kubectl`, `kind` and `flux` clis to `~/.fks` for later use. It's doesn't manipulate any of your regular local setup.
 
 * `make pre-check`:
-  Validates the required setup: docker, kubectl, kind and flux.
+  Validates the required setup: podman or docker, kubectl, kind and flux.
 
 * `make new`:
   Creates a new k8s kind cluster and points the local kube context to it.
 
 * `make bootstrap`:
   Bootstraps flux to the local cluster, targeting the _this_ GitHub repository you're using and _the current_ checked out branch.
+  `GITHUB_TOKEN` env needs to be configured with a repo-scoped GitHub personal access token
 
 * `make check`:
   Runs automatically before _bootstrap_, validating the kube context and printing the targeted GitHub repository.
@@ -44,14 +45,14 @@ The included `Makefile` supports the following tasks:
 
 ## Local requirements
 
-While `kind` and `flux` are managed with this repository (for version compatibility of everything in here), your local setup has to fulfill the following:
+While `kubectl`, `kind` and `flux` are managed with this repository (for version compatibility of everything in here), your local setup has to fulfill the following:
 
-* `docker` client available and configured properly to a docker daemon
-* `kubectl` in a recent version
+* `podman` or `docker` client available (and in case of docker configured properly to its daemon)
 * `curl` for downloading `kind` and `flux`
 * some common tools used by the Makefile:
   * `jq`
   * `cut`
+  * `which`
   * `tar` (with gzip support)
 
 ## Contribution
