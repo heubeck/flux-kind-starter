@@ -17,13 +17,20 @@ flux_version = v2.0.0-rc.5
 flux_arch = linux_amd64
 flux_location = $(binary_location)/flux
 
+kind_podman = $(shell type -P podman > /dev/null && echo "KIND_EXPERIMENTAL_PROVIDER=podman" || echo "")
+kind_cmd = $(kind_podman) $(kind_location)
+
 wait_timeout= "60s"
 
 .PHONY: pre-check
 pre-check: # validate required tools
 	### Checking installed tooling
-	# Docker
-	@docker version -f 'docker client version {{.Client.Version}}, server version {{.Server.Version}}'
+	# Podman or Docker
+	@if [ -z "$(kind_podman)" ]; then \
+		docker version -f 'docker client version {{.Client.Version}}, server version {{.Server.Version}}'; \
+	else \
+		podman -v; \
+	fi
 	#
 	# Kubectl
 	@kubectl version --client=true --output=json | jq -r '"kubectl version "+ .clientVersion.major + "." + .clientVersion.minor'
@@ -54,11 +61,11 @@ prepare: # install prerequisites
 	# Creating $(binary_location)
 	@mkdir -p $(binary_location)
 
-	# Install or update kind $(kind_version_number) into $(kind_location)
+	# Install or update kind $(kind_version_number) for $(kind_arch) into $(kind_location)
 	@curl -sSLo $(kind_location) "https://github.com/kubernetes-sigs/kind/releases/download/v$(kind_version_number)/kind-$(kind_arch)"
 	@chmod a+x $(kind_location)
 
-	# Install or update flux $(flux_version_number) into $(flux_location)
+	# Install or update flux $(flux_version_number) for $(flux_arch) into $(flux_location)
 	@curl -sSLo $(flux_location).tgz https://github.com/fluxcd/flux2/releases/download/v$(flux_version_number)/flux_$(flux_version_number)_$(flux_arch).tar.gz
 	@tar xf $(flux_location).tgz -C $(binary_location) && rm -f $(flux_location).tgz
 	@chmod a+x $(flux_location)
@@ -66,17 +73,17 @@ prepare: # install prerequisites
 .PHONY: new
 new: # create fresh kind cluster
 	# Creating kind cluster named '$(cluster_name)'
-	@$(kind_location) create cluster -n $(cluster_name) --config .kind/config.yaml
-	@$(kind_location) export kubeconfig -n $(cluster_name) --kubeconfig ${HOME}/.kube/config
+	@$(kind_cmd) create cluster -n $(cluster_name) --config .kind/config.yaml
+	@$(kind_cmd) export kubeconfig -n $(cluster_name) --kubeconfig ${HOME}/.kube/config
 
 .PHONY: kube-ctx
 kube-ctx: # create fresh kind cluster
-	@$(kind_location) export kubeconfig -n $(cluster_name) --kubeconfig ${HOME}/.kube/config
+	@$(kind_cmd) export kubeconfig -n $(cluster_name) --kubeconfig ${HOME}/.kube/config
 
 .PHONY: clean
 clean: # remove kind cluster
 	# Removing kind cluster named '$(cluster_name)'
-	@$(kind_location) delete cluster -n $(cluster_name)
+	@$(kind_cmd) delete cluster -n $(cluster_name)
 
 gitops_repo_owner = $(shell echo $(gitops_repo) | cut -d/ -f4)
 gitops_repo_name = $(shell echo $(gitops_repo) | cut -d/ -f5 | cut -d. -f1)
