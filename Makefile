@@ -13,7 +13,7 @@ kind_arch = linux-amd64
 kind_location = $(binary_location)/kind
 
 # https://github.com/fluxcd/flux2/releases
-flux_version = v2.0.0-rc.4
+flux_version = v2.0.0-rc.5
 flux_arch = linux_amd64
 flux_location = $(binary_location)/flux
 
@@ -61,6 +61,7 @@ prepare: # install prerequisites
 	# Install or update flux $(flux_version_number) into $(flux_location)
 	@curl -sSLo $(flux_location).tgz https://github.com/fluxcd/flux2/releases/download/v$(flux_version_number)/flux_$(flux_version_number)_$(flux_arch).tar.gz
 	@tar xf $(flux_location).tgz -C $(binary_location) && rm -f $(flux_location).tgz
+	@chmod a+x $(flux_location)
 
 .PHONY: new
 new: # create fresh kind cluster
