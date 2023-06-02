@@ -29,6 +29,9 @@ The included `Makefile` supports the following tasks:
 * `make check`:
   Runs automatically before _bootstrap_, validating the kube context and printing the targeted GitHub repository.
 
+* `make wait`:
+  Blocks til reconciliation finished and the cluster is ready to use.
+
 * `make clean`:
   Removes the local kind cluster.
 

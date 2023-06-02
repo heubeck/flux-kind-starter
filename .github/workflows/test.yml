@@ -1,0 +1,41 @@
+---
+name: Test local setup
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - run: make prepare
+
+      - run: make pre-check
+
+      - run: make new
+
+      - run: make check
+
+      - run: make bootstrap
+        env:
+          # GitHub personal access token with full 'repo' scope used to test the flux bootstrap process
+          GITHUB_TOKEN: ${{ secrets.BOOTSTRAP_TEST_TOKEN }}
+
+      - run: make wait
+
+      - run: |
+          curl -fs http://localhost:8080/dashboard
+          curl -fsk https://localhost:8443/dashboard
+          curl -fs http://localhost:8080/dashboard/#/about
+          curl -fsk https://localhost:8443/dashboard/#/about
+
+      - run: make clean

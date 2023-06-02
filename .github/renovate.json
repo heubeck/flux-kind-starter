@@ -1,0 +1,53 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "labels": [
+        "dependencies",
+        "renovate"
+    ],
+    "extends": [
+        "config:base"
+    ],
+    "dryRun": null,
+    "branchPrefix": "renovate/",
+    "username": "renovate[bot]",
+    "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+    "onboarding": false,
+    "platform": "github",
+    "forkProcessing": "disabled",
+    "semanticCommits": "disabled",
+    "dependencyDashboard": false,
+    "suppressNotifications": [
+        "prIgnoreNotification"
+    ],
+    "rebaseWhen": "conflicted",
+    "branchConcurrentLimit": 0,
+    "prConcurrentLimit": 10,
+    "prHourlyLimit": 0,
+    "enabledManagers": [
+        "regex"
+    ],
+    "regexManagers": [
+        {
+            "description": "Update kind version in Makefile",
+            "fileMatch": [
+                "^Makefile$"
+            ],
+            "matchStrings": [
+                "kind_version = (?<currentValue>.*?)"
+            ],
+            "depNameTemplate": "kubernetes-sigs/kind",
+            "datasourceTemplate": "github-releases"
+        },
+        {
+          "description": "Update flux version in Makefile",
+          "fileMatch": [
+              "^Makefile$"
+          ],
+          "matchStrings": [
+              "flux_version = (?<currentValue>.*?)"
+          ],
+          "depNameTemplate": "fluxcd/flux2",
+          "datasourceTemplate": "github-releases"
+      }
+    ]
+}
