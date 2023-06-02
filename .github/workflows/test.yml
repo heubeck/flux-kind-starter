@@ -9,13 +9,30 @@ on:
       - reopened
     branches:
       - main
+permissions:
+  contents: write
 jobs:
-  test:
+  check_skip:
     runs-on: ubuntu-latest
+    outputs:
+      head-commit-message: ${{ steps.get_head_commit_message.outputs.headCommitMsg }}
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - id: get_head_commit_message
+        run: echo "headCommitMsg=$(git show -s --format=%s)" >> $GITHUB_OUTPUT
+
+  test:
+    needs: check_skip
+    if: ${{ !(startsWith(needs.check_skip.outputs.head-commit-message, 'Add Flux') && endsWith(needs.check_skip.outputs.head-commit-message, 'manifests')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo '${{ needs.check_skip.outputs.head-commit-message }}'
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - run: make prepare
 
@@ -39,3 +56,20 @@ jobs:
           curl -fsk https://localhost:8443/dashboard/#/about
 
       - run: make clean
+
+      - run: |
+          # reset flux sync target branch
+          git config --global user.email "ci@acti.on"
+          git config --global user.name "${{ github.actor }}"
+
+          git pull
+          git checkout origin/main -- local-cluster/flux-system/gotk-sync.yaml
+          git add local-cluster/flux-system/gotk-sync.yaml
+          set -e
+          git commit --amend --allow-empty -m "$(git log -n 1 --oneline --format="%s")"
+          if [ $? -eq 0 ]; then
+            set -e
+            git push --force
+          else
+            echo "No changes on gotk-sync.yaml"
+          fi
