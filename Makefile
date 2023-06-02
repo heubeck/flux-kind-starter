@@ -8,14 +8,16 @@ gitops_branch = $(shell git branch --show-current)
 cluster_name = local-cluster
 
 # https://github.com/kubernetes-sigs/kind/releases
-kind_version = 0.19.0
+kind_version = v0.19.0
 kind_arch = linux-amd64
 kind_location = $(binary_location)/kind
 
 # https://github.com/fluxcd/flux2/releases
-flux_version = 2.0.0-rc.4
+flux_version = v2.0.0-rc.4
 flux_arch = linux_amd64
 flux_location = $(binary_location)/flux
+
+wait_timeout= "60s"
 
 .PHONY: pre-check
 pre-check: # validate required tools
@@ -44,17 +46,20 @@ check: pre-check # validate prerequisites
 	# Everything is fine, lets get bootstrapped
 	#
 
+kind_version_number = $(shell echo $(kind_version) | cut -c 2-)
+flux_version_number = $(shell echo $(flux_version) | cut -c 2-)
+
 .PHONY: prepare
 prepare: # install prerequisites
 	# Creating $(binary_location)
 	@mkdir -p $(binary_location)
 
-	# Install or update kind $(kind_version) into $(kind_location)
-	@curl -sSLo $(kind_location) "https://github.com/kubernetes-sigs/kind/releases/download/v$(kind_version)/kind-$(kind_arch)"
+	# Install or update kind $(kind_version_number) into $(kind_location)
+	@curl -sSLo $(kind_location) "https://github.com/kubernetes-sigs/kind/releases/download/v$(kind_version_number)/kind-$(kind_arch)"
 	@chmod a+x $(kind_location)
 
-	# Install or update flux $(flux_version) into $(flux_location)
-	@curl -sSLo $(flux_location).tgz https://github.com/fluxcd/flux2/releases/download/v$(flux_version)/flux_$(flux_version)_$(flux_arch).tar.gz
+	# Install or update flux $(flux_version_number) into $(flux_location)
+	@curl -sSLo $(flux_location).tgz https://github.com/fluxcd/flux2/releases/download/v$(flux_version_number)/flux_$(flux_version_number)_$(flux_arch).tar.gz
 	@tar xf $(flux_location).tgz -C $(binary_location) && rm -f $(flux_location).tgz
 
 .PHONY: new
@@ -101,3 +106,11 @@ endif
 reconcile: # reconsule flux-system kustomization
 	@$(flux_location) reconcile kustomization flux-system --with-source
 	@kubectl get kustomization -n flux-system
+
+.PHONY: wait
+wait: # wait for reconciliation complete
+	@kubectl wait --for=condition=ready --timeout=$(wait_timeout) kustomization -n flux-system flux-system
+	@kubectl wait --for=condition=ready --timeout=$(wait_timeout) kustomization -n flux-system infrastructure
+	@kubectl wait --for=condition=ready --timeout=$(wait_timeout) helmrelease -n ingress ingress-nginx
+	@kubectl wait --for=condition=ready --timeout=$(wait_timeout) helmrelease -n dashboard kubernetes-dashboard
+	@kubectl wait --for=condition=ready --timeout=$(wait_timeout) kustomization -n flux-system apps
