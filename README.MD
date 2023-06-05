@@ -47,11 +47,12 @@ The included `Makefile` supports the following tasks:
 
 While `kubectl`, `kind` and `flux` are managed with this repository (for version compatibility of everything in here), your local setup has to fulfill the following:
 
-* `podman` or `docker` client available (and in case of docker configured properly to its daemon)
-* `curl` for downloading `kind` and `flux`
+* `podman` (has precedence) or `docker` client available (and in case of docker configured properly to its daemon)
+* `curl` for downloading the managed clis
 * some common tools used by the Makefile:
   * `jq`
   * `cut`
+  * `awk`
   * `which`
   * `tar` (with gzip support)
 

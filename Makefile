@@ -8,12 +8,10 @@ gitops_branch = $(shell git branch --show-current)
 cluster_name = local-cluster
 
 ### operating system, options are (darwin|linux)
-# os = darwin
-os = linux
+os = $(shell uname -s | awk '{print tolower($$0)}')
 
 ### operating system, options are (amd64|arm64)
-# arch = arm64
-arch = amd64
+arch = $(shell [[ "$$(uname -m)" = x86_64 ]] && echo "amd64" || echo "$$(uname -m)")
 
 ### versions
 
@@ -63,13 +61,18 @@ pre-check: # validate required tools
 	@$(flux_location) --version
 	#
 
+gitops_repo_owner = $(shell [[ "$(gitops_repo)" = http* ]] && echo $(gitops_repo) | cut -d/ -f4 || echo $(gitops_repo) | cut -d: -f2 | cut -d/ -f1)
+gitops_repo_name = $(shell [[ "$(gitops_repo)" = http* ]] && echo $(gitops_repo) | cut -d/ -f5 | cut -d. -f1 || echo $(gitops_repo) | cut -d/ -f2 | cut -d. -f1)
+
 .PHONY: check
 check: pre-check # validate prerequisites
 	### Checking prerequisites
 	# Kube Context
 	@$(kubectl_location) cluster-info --context kind-$(cluster_name) | grep 127.0.0.1
 	#
-	# GitOps-Repository: $(gitops_repo)
+	# GitOps-Repository-Url: $(gitops_repo)
+	# Repo-Owner: $(gitops_repo_owner)
+	# Repo-Name: $(gitops_repo_name)
 	# GitOps-Branch: $(gitops_branch)
 	# Everything is fine, lets get bootstrapped
 	#
@@ -110,9 +113,6 @@ kube-ctx: # create fresh kind cluster
 clean: # remove kind cluster
 	# Removing kind cluster named '$(cluster_name)'
 	@$(kind_cmd) delete cluster -n $(cluster_name)
-
-gitops_repo_owner = $(shell echo $(gitops_repo) | cut -d/ -f4)
-gitops_repo_name = $(shell echo $(gitops_repo) | cut -d/ -f5 | cut -d. -f1)
 
 .PHONY: bootstrap
 bootstrap: check kube-ctx # install and configure flux
