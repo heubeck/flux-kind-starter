@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 ### the location where the necessary cli binaries are stored
 binary_location = ${HOME}/.fks
 
@@ -16,9 +18,9 @@ arch = $(shell [[ "$$(uname -m)" = x86_64 ]] && echo "amd64" || echo "$$(uname -
 ### versions
 
 # https://kubernetes.io/releases/
-kubectl_version = v1.27.2
+kubectl_version = v1.27.3
 # https://github.com/kubernetes-sigs/kind/releases
-kind_version = v0.19.0
+kind_version = v0.20.0
 # https://github.com/fluxcd/flux2/releases
 flux_version = v2.0.0-rc.5
 
@@ -33,9 +35,9 @@ kind_location = $(binary_location)/kind
 flux_arch = $(os)_$(arch)
 flux_location = $(binary_location)/flux
 
-### leave empty for enforcing docker even if podman was available
+### leave empty for enforcing docker even if podman was available, or set env NO_PODMAN=1
 # kind_podman =
-kind_podman = $(shell which podman > /dev/null && echo "KIND_EXPERIMENTAL_PROVIDER=podman" || echo "")
+kind_podman = $(shell [[ "$$NO_PODMAN" -ne 1 ]] && which podman > /dev/null && echo "KIND_EXPERIMENTAL_PROVIDER=podman" || echo "")
 
 kind_cmd = $(kind_podman) $(kind_location)
 
@@ -51,8 +53,8 @@ pre-check: # validate required tools
 		podman -v; \
 	fi
 	#
-	# Kubectl
-	@$(kubectl_location) version --client=true --output=json | jq -r '"kubectl version "+ .clientVersion.major + "." + .clientVersion.minor'
+	# Kubectl ($(kubectl_location))
+	@$(kubectl_location) version --client=true --output=json | jq -r '"kubectl version "+ .clientVersion.gitVersion'
 	#
 	# Kind ($(kind_location))
 	@$(kind_location) --version
