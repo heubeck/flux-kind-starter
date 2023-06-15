@@ -9,8 +9,6 @@ on:
       - reopened
     branches:
       - main
-permissions:
-  contents: write
 jobs:
   check_skip:
     runs-on: ubuntu-latest
@@ -27,6 +25,22 @@ jobs:
     needs: check_skip
     if: ${{ !(startsWith(needs.check_skip.outputs.head-commit-message, 'Add Flux') && endsWith(needs.check_skip.outputs.head-commit-message, 'manifests')) }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - name: podman
+            NO_PODMAN: 0
+            # rootless podman not supported on GH action runner because cgroup v2 is not enabled
+            sudo: "sudo -E"
+          - name: docker
+            NO_PODMAN: 1
+            sudo: ""
+    name: local setup using ${{ matrix.name }}
+    env:
+      NO_PODMAN: ${{ matrix.NO_PODMAN }}
     steps:
       - run: echo '${{ needs.check_skip.outputs.head-commit-message }}'
 
@@ -34,20 +48,20 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - run: make prepare
+      - run: ${{ matrix.sudo }} make prepare
 
-      - run: make pre-check
+      - run: ${{ matrix.sudo }} make pre-check
 
-      - run: make new
+      - run: ${{ matrix.sudo }} make new
 
-      - run: make check
+      - run: ${{ matrix.sudo }} make check
 
-      - run: make bootstrap
+      - run: ${{ matrix.sudo }} make bootstrap
         env:
           # GitHub personal access token with full 'repo' scope used to test the flux bootstrap process
           GITHUB_TOKEN: ${{ secrets.BOOTSTRAP_TEST_TOKEN }}
 
-      - run: make wait
+      - run: ${{ matrix.sudo }} make wait
 
       - run: |
           curl -fs http://localhost:8080/dashboard
@@ -55,7 +69,7 @@ jobs:
           curl -fs http://localhost:8080/dashboard/#/about
           curl -fsk https://localhost:8443/dashboard/#/about
 
-      - run: make clean
+      - run: ${{ matrix.sudo }} make clean
 
       - run: |
           # reset flux sync target branch

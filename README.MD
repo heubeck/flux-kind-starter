@@ -22,6 +22,7 @@ The included `Makefile` supports the following tasks:
 
 * `make new`:
   Creates a new k8s kind cluster and points the local kube context to it.
+  If available, _podman_ will be used unless env `NO_PODMAN=1` doesn't prevent it. Otherwise _docker_ is used.
 
 * `make bootstrap`:
   Bootstraps flux to the local cluster, targeting the _this_ GitHub repository you're using and _the current_ checked out branch.
