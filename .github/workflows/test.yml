@@ -15,7 +15,7 @@ jobs:
     outputs:
       head-commit-message: ${{ steps.get_head_commit_message.outputs.headCommitMsg }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - id: get_head_commit_message
@@ -44,7 +44,7 @@ jobs:
     steps:
       - run: echo '${{ needs.check_skip.outputs.head-commit-message }}'
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
