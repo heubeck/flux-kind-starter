@@ -22,7 +22,7 @@ kubectl_version = v1.27.3
 # https://github.com/kubernetes-sigs/kind/releases
 kind_version = v0.20.0
 # https://github.com/fluxcd/flux2/releases
-flux_version = v2.0.0-rc.5
+flux_version = v2.1.2
 
 ###
 
