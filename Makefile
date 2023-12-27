@@ -18,11 +18,13 @@ arch = $(shell [[ "$$(uname -m)" = x86_64 ]] && echo "amd64" || echo "$$(uname -
 ### versions
 
 # https://kubernetes.io/releases/
-kubectl_version = v1.27.3
+kubectl_version = v1.29.0
 # https://github.com/kubernetes-sigs/kind/releases
 kind_version = v0.20.0
 # https://github.com/fluxcd/flux2/releases
-flux_version = v2.1.2
+flux_version = v2.2.2
+# https://hub.docker.com/r/kindest/node/tags
+kindest_node_version = v1.29.0
 
 ###
 
@@ -34,6 +36,8 @@ kind_location = $(binary_location)/kind
 
 flux_arch = $(os)_$(arch)
 flux_location = $(binary_location)/flux
+
+kindest_node_image = kindest/node:$(kindest_node_version)
 
 ### leave empty for enforcing docker even if podman was available, or set env NO_PODMAN=1
 # kind_podman =
@@ -104,7 +108,7 @@ prepare: # install prerequisites
 .PHONY: new
 new: # create fresh kind cluster
 	# Creating kind cluster named '$(cluster_name)'
-	@$(kind_cmd) create cluster -n $(cluster_name) --config .kind/config.yaml
+	@$(kind_cmd) create cluster -n $(cluster_name) --config .kind/config.yaml --image $(kindest_node_image)
 	@$(kind_cmd) export kubeconfig -n $(cluster_name) --kubeconfig ${HOME}/.kube/config
 
 .PHONY: kube-ctx
