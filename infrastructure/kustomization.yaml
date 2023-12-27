@@ -5,3 +5,4 @@ resources:
 - namespaces.yaml
 - ingress.yaml
 - dashboard.yaml
+- wego.yaml
