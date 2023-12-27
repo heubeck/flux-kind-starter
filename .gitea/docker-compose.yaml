@@ -1,0 +1,40 @@
+version: "3"
+
+networks:
+  gitea:
+    external: false
+
+volumes:
+  gitea:
+    driver: local
+
+services:
+  server:
+    image: gitea/gitea:1
+    container_name: gitea
+    restart: always
+    environment:
+      # https://github.com/go-gitea/gitea/blob/release/v1.21/custom/conf/app.example.ini
+      - GITEA__security__SECRET_KEY=5bO0xyvAck0NvlLWNg1EOwQQeQK0pw9DjGy67TKWV17iMLW9NbkthoSjhELNsHNc
+      - GITEA__security__INTERNAL_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE3MDM3MDgyMjZ9.Ql85E6j1uPMT3lG1e8xFbokuBdaw4DionOj9v0an8HE
+      - GITEA__security__INSTALL_LOCK=true
+      - GITEA__security__MIN_PASSWORD_LENGTH=0
+      - GITEA__database__DB_TYPE=sqlite3
+      - GITEA__database__PATH=/data/gitea/gitea.db
+      - GITEA__server__ROOT_URL=https://localhost:8022
+      - GITEA__server__OFFLINE_MODE=true
+      - GITEA__server__LANDING_PAGE=explore
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__PROTOCOL=https
+      - GITEA__server__CERT_FILE=/tls/cert.pem
+      - GITEA__server__KEY_FILE=/tls/key.pem
+    networks:
+      - gitea
+    volumes:
+      - gitea:/data
+      - ./tls:/tls
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8022:3000"
+      - "2222:22"
