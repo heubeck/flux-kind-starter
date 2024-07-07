@@ -144,7 +144,9 @@ endif
 
 .PHONY: reconcile
 reconcile: # reconsule flux-system kustomization
-	@$(flux_location) reconcile kustomization flux-system --with-source
+	@$(flux_location) reconcile kustomization flux-system --with-source --timeout=$(wait_timeout)
+	@$(flux_location) reconcile kustomization infrastructure --timeout=$(wait_timeout)
+	@$(flux_location) reconcile kustomization apps --timeout=$(wait_timeout)
 	@$(kubectl_location) get kustomization -n flux-system
 
 .PHONY: wait
